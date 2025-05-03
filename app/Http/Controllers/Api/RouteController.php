@@ -27,7 +27,15 @@ class RouteController extends Controller
      */
     public function store(StoreRouteRequest $request)
     {
-        $route = Route::create($request->validated());
+        // Obtenemos los datos validados del request
+        $validated = $request->validated();
+        
+        // Asignamos el ID del usuario autenticado
+        $validated['user_id'] = $request->user()->id;
+        
+        // Creamos la ruta con los datos validados y el user_id actual
+        $route = Route::create($validated);
+        
         return response()->json($route, 201);
     }
 
