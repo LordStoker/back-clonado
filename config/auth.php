@@ -96,6 +96,8 @@ return [
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
+            // URL a la que redirige el enlace de reseteo, apuntando al frontend
+            'url' => env('FRONTEND_URL', 'http://localhost:5173') . '/reset-password',
         ],
     ],
 

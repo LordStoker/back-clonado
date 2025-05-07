@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\RouteImageController;
 use App\Http\Controllers\Api\CommentImageController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -23,6 +25,11 @@ Route::get('/user', function (Request $request) {
 // --- RUTAS PÚBLICAS ---
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+
+// Endpoints para recuperación de contraseña
+Route::post('/forgot-password', [PasswordResetLinkController::class, 'apiStore']);
+Route::post('/reset-password', [NewPasswordController::class, 'apiStore']);
+
 // Listar y mostrar información general (no requieren autenticación)
 Route::apiResource('terrain', TerrainController::class);
 Route::apiResource('difficulty', DifficultyController::class);

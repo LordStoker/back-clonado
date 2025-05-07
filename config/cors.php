@@ -7,6 +7,9 @@ return [
         'login',
         'logout',
         'register',
+        'forgot-password',   // Añadimos ruta para solicitar recuperación
+        'reset-password',    // Añadimos ruta para restablecer contraseña
+        'reset-password/*',  // Añadimos todas las rutas de reset con token
     ],
 
     'allowed_methods' => ['*'],
