@@ -31,12 +31,27 @@
             text-align: center;
         }
         
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .logo-image {
+            height: 40px;
+            width: auto;
+            vertical-align: middle;
+        }
+        
         .logo {
             color: white;
             font-size: 28px;
             font-weight: bold;
             margin: 0;
             letter-spacing: 1px;
+            display: inline-block;
+            vertical-align: middle;
         }
         
         .logo-accent {
@@ -109,6 +124,11 @@
             padding: 15px;
             font-size: 12px;
         }
+
+        .footer-p {
+            margin: 5px 0;
+            color: #d3d3d3;
+        }
         
         .separator {
             border-top: 1px solid #e5e7eb;
@@ -141,7 +161,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="logo">JOHNY <span class="logo-accent">MOTORBIKE</span></h1>
+            <div class="logo-container">
+                <!-- Logo incluido como imagen que apunta a un recurso público -->
+                
+                <h1 class="logo">JOHNY <span class="logo-accent">MOTORBIKE</span></h1>
+            </div>
         </div>
         
         <div class="content">
@@ -177,8 +201,8 @@
         </div>
         
         <div class="footer">
-            <p>© {{ date('Y') }} Johny Motorbike. Todos los derechos reservados.</p>
-            <p>Las mejores rutas para tu aventura en dos ruedas</p>
+            <p class="footer-p">© {{ date('Y') }} Johny Motorbike. Todos los derechos reservados.</p>
+            <p class="footer-p">Las mejores rutas para tu aventura en dos ruedas</p>
         </div>
     </div>
 </body>
