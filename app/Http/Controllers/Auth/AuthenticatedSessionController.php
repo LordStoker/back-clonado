@@ -25,7 +25,7 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid login credentials'], 401);
+            return response()->json(['message' => 'El email o la contraseña no son correctos'], 401);
         }
 
         $user = Auth::user();

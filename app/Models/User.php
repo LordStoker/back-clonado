@@ -44,6 +44,22 @@ class User extends Authenticatable
         
         return $this->hasMany(Comment::class);
     }
+    
+    /**
+     * Rutas favoritas del usuario
+     */
+    public function favoriteRoutes()
+    {
+        return $this->hasMany(FavoriteRoute::class);
+    }
+    
+    /**
+     * Relación muchos a muchos para obtener las rutas favoritas del usuario
+     */
+    public function favorites()
+    {
+        return $this->belongsToMany(Route::class, 'favorite_routes')->withTimestamps();
+    }
 
     /**
      * Envía la notificación de recuperación de contraseña.

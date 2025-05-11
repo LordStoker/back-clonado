@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\LandscapeController;
 use App\Http\Controllers\Api\DifficultyController;
 use App\Http\Controllers\Api\RouteImageController;
 use App\Http\Controllers\Api\CommentImageController;
+use App\Http\Controllers\Api\FavoriteRouteController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -55,7 +56,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('comment', CommentController::class)->only(['store', 'destroy']);
     //Rutas protegidas para actualizar o eliminar usuarios
     Route::put('/user/{user}', [UserController::class, 'update']);
+    Route::put('/user/{user}/change-password', [UserController::class, 'changePassword']);
     Route::delete('/user/{user}', [UserController::class, 'destroy']);
+    
+    // Rutas para favoritos
+    // IMPORTANTE: La ruta de favoritos debe estar antes que otras rutas con parámetros que puedan interceptarla
+    Route::get('/user/favorites', [FavoriteRouteController::class, 'getUserFavorites']);
+    // Creamos una ruta alternativa más específica por si hay conflictos con la anterior
+    Route::get('/user-favorite-routes', [FavoriteRouteController::class, 'getUserFavorites']);
+    // Ruta de depuración
+    Route::get('/debug-favorites', [FavoriteRouteController::class, 'debugRoute']);
+    Route::post('/routes/{route}/favorite', [FavoriteRouteController::class, 'toggleFavorite']);
+    Route::get('/routes/{route}/favorite', [FavoriteRouteController::class, 'checkFavorite']);
 
     // Rutas protegidas para creación, modificación y borrado de imágenes de rutas
     Route::post('/route-images', [RouteImageController::class, 'store']);

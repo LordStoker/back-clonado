@@ -59,8 +59,39 @@ class Route extends Model
     }
     public function routeImages()
     {
-        return $this->hasOne(RouteImage::class);
+        return $this->hasMany(RouteImage::class);
     }
     
+    /**
+     * Este es un alias para mantener compatibilidad con código existente
+     */
+    public function route_images()
+    {
+        return $this->routeImages();
+    }
+    
+    /**
+     * Relación con la tabla pivot de rutas favoritas
+     */
+    public function favoriteRoutes()
+    {
+        return $this->hasMany(FavoriteRoute::class);
+    }
+    
+    /**
+     * Relación muchos a muchos para obtener usuarios que han marcado esta ruta como favorita
+     */
+    public function favoriteUsers()
+    {
+        return $this->belongsToMany(User::class, 'favorite_routes')->withTimestamps();
+    }
+    
+    /**
+     * Accessor para mantener compatibilidad con el frontend que espera route_images
+     */
+    public function getRouteImagesAttribute()
+    {
+        return $this->routeImages()->get();
+    }
 
 }
