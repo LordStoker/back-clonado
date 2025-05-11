@@ -33,6 +33,9 @@ class Route extends Model
         'user_id',
     ];
 
+    // Añadimos el contador de comentarios al array de appends
+    protected $appends = ['comments_count'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -93,5 +96,12 @@ class Route extends Model
     {
         return $this->routeImages()->get();
     }
-
+    
+    /**
+     * Accessor para obtener el contador de comentarios
+     */
+    public function getCommentsCountAttribute()
+    {
+        return $this->comments()->count();
+    }
 }

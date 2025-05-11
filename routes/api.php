@@ -41,6 +41,9 @@ Route::apiResource('route-images', RouteImageController::class)->only(['index', 
 Route::apiResource('comment-images', CommentImageController::class)->only(['index', 'show']);
 Route::apiResource('comment', CommentController::class)->only(['index', 'show']);
 
+// Ruta pública para obtener comentarios de una ruta específica
+Route::get('/routes/{route}/comments', [CommentController::class, 'getRouteComments']);
+
 // Rutas públicas para las rutas (listar y ver una) //BORRARLAS TRAS TERMINAR LAS PRUEBAS DE BACKEND Y FRONTEND
 Route::apiResource('route', RouteController::class)->only(['index', 'show']);
 
@@ -64,6 +67,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/favorites', [FavoriteRouteController::class, 'getUserFavorites']);
     // Creamos una ruta alternativa más específica por si hay conflictos con la anterior
     Route::get('/user-favorite-routes', [FavoriteRouteController::class, 'getUserFavorites']);
+    // Nueva ruta optimizada que devuelve solo los IDs de las rutas favoritas
+    Route::get('/favorite-route-ids', [FavoriteRouteController::class, 'getFavoriteIds']);
     // Ruta de depuración
     Route::get('/debug-favorites', [FavoriteRouteController::class, 'debugRoute']);
     Route::post('/routes/{route}/favorite', [FavoriteRouteController::class, 'toggleFavorite']);

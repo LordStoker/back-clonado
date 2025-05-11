@@ -91,7 +91,8 @@ class FavoriteRouteController extends Controller
             // Primero obtenemos los IDs de las rutas favoritas
             $favoriteRouteIds = FavoriteRoute::where('user_id', $userId)
                 ->pluck('route_id');
-                  // Luego obtenemos las rutas completas con sus relaciones
+            
+            // Luego obtenemos las rutas completas con sus relaciones
             $favoriteRoutes = Route::whereIn('id', $favoriteRouteIds)
                 ->with(['landscape', 'difficulty', 'user', 'terrain', 'country', 'routeImages'])
                 ->get();
@@ -99,6 +100,11 @@ class FavoriteRouteController extends Controller
             // Nos aseguramos de que el atributo route_images esté disponible
             $favoriteRoutes->each(function ($route) {
                 $route->route_images = $route->routeImages;
+                // Agregamos contadores de comentarios
+                $route->comments_count = $route->comments->count();
+                // Calculamos la valoración media
+                $route->totalScore = $route->comments->sum('score');
+                $route->countScore = $route->comments->count();
             });
             
             return response()->json([
@@ -109,6 +115,32 @@ class FavoriteRouteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener rutas favoritas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Obtener solo los IDs de las rutas favoritas del usuario actual
+     * Este endpoint es más liviano y optimizado para verificaciones rápidas
+     */
+    public function getFavoriteIds(Request $request)
+    {
+        try {
+            $userId = $request->user()->id;
+            
+            // Obtenemos solo los IDs de las rutas favoritas
+            $favoriteRouteIds = FavoriteRoute::where('user_id', $userId)
+                ->pluck('route_id')
+                ->toArray();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $favoriteRouteIds
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener IDs de favoritos: ' . $e->getMessage()
             ], 500);
         }
     }

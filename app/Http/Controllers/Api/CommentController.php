@@ -24,6 +24,55 @@ class CommentController extends Controller
     }
 
     /**
+     * Get paginated comments for a specific route.
+     */
+    public function getRouteComments(Request $request, $routeId)
+    {
+        // Validar el ID de la ruta
+        $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'perPage' => 'sometimes|integer|min:1|max:50',
+        ]);
+
+        // Verificar que la ruta existe
+        if (!\App\Models\Route::find($routeId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruta no encontrada',
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 10,
+                    'total' => 0,
+                ]
+            ], 404);
+        }
+
+        // Configurar la paginación
+        $page = $request->input('page', 1);
+        $perPage = $request->input('perPage', 10);
+
+        // Buscar comentarios para la ruta especificada
+        $comments = Comment::with(['user'])
+            ->where('route_id', $routeId)
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // Devolver los comentarios paginados
+        return response()->json([
+            'success' => true,
+            'data' => $comments->items(),
+            'pagination' => [
+                'current_page' => $comments->currentPage(),
+                'last_page' => $comments->lastPage(),
+                'per_page' => $comments->perPage(),
+                'total' => $comments->total(),
+            ]
+        ], 200);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -44,6 +93,9 @@ class CommentController extends Controller
         
         // Crear el comentario con los datos validados y el user_id del usuario autenticado
         $comment = Comment::create($commentData);
+
+        // Cargar la relación del usuario para incluirla en la respuesta
+        $comment->load('user');
 
         // Return the created comment as a JSON response
         return response()->json([
