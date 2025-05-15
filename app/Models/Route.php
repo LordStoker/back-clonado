@@ -31,6 +31,7 @@ class Route extends Model
         'difficulty_id',
         'landscape_id',
         'user_id',
+        'image',
     ];
 
     // Añadimos el contador de comentarios al array de appends

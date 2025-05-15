@@ -23,11 +23,103 @@ class RouteFactory extends Factory
     {
         return [
             
-            'name' => fake()->word(),
-            'route_map' => fake()->text(200),
-            'description' => fake()->text(200),
-            'distance' => fake()->numberBetween(1, 1600),
-            'duration' => fake()->numberBetween(1, 700),
+            'name' => fake()->sentence(3),
+            'route_map' => function () {
+                // Generar coordenadas aleatorias para crear un polígono cerrado
+                // que simule una ruta en una región geográfica específica
+                
+                // Definimos algunas regiones para generar rutas
+                $regions = [
+                    // España (centro)
+                    ['lat' => 40.416775, 'lng' => -3.703790, 'radius' => 2],
+                    // Barcelona
+                    ['lat' => 41.390205, 'lng' => 2.154007, 'radius' => 1],
+                    // Valencia
+                    ['lat' => 39.469908, 'lng' => -0.376288, 'radius' => 1],
+                    // Sevilla
+                    ['lat' => 37.389092, 'lng' => -5.984459, 'radius' => 1],
+                    // Francia (París)
+                    ['lat' => 48.856614, 'lng' => 2.352222, 'radius' => 2],
+                    // Italia (Roma)
+                    ['lat' => 41.902782, 'lng' => 12.496366, 'radius' => 1.5],
+                ];
+
+                // Seleccionamos una región aleatoria
+                $region = $regions[array_rand($regions)];
+                $centerLat = $region['lat'];
+                $centerLng = $region['lng'];
+                $radius = $region['radius']; // Radio en grados aproximadamente
+                
+                // Generamos entre 4 y 10 puntos para la ruta
+                $numPoints = rand(4, 10);
+                $coordinates = [];
+                
+                // Generamos los puntos en un patrón que forme una ruta realista
+                for ($i = 0; $i < $numPoints; $i++) {
+                    // Calculamos un offset aleatorio dentro del radio
+                    $latOffset = (mt_rand(-100, 100) / 100) * $radius;
+                    $lngOffset = (mt_rand(-100, 100) / 100) * $radius;
+                    
+                    // Ajustamos la dirección para crear un patrón de ruta
+                    $factor = $i / ($numPoints - 1); // 0 a 1
+                    $dirLat = sin($factor * M_PI) * $radius * 0.5;
+                    $dirLng = cos($factor * M_PI) * $radius * 0.5;
+                    
+                    $lat = $centerLat + $dirLat + ($latOffset * 0.2);
+                    $lng = $centerLng + $dirLng + ($lngOffset * 0.2);
+                    
+                    // Añadimos el punto a las coordenadas
+                    $coordinates[] = [$lat, $lng];
+                }
+                
+                // JSON encode para almacenar en la BD
+                return json_encode($coordinates);
+            },
+            'description' => fake()->paragraph(3),
+            'distance' => function (array $attributes) {
+                // Calculamos la distancia real basada en las coordenadas
+                $coordinates = json_decode($attributes['route_map']);
+                if (!$coordinates || count($coordinates) < 2) {
+                    return fake()->numberBetween(10, 500);
+                }
+                
+                // Función para calcular la distancia entre dos puntos en km
+                $calculateDistance = function($lat1, $lon1, $lat2, $lon2) {
+                    $earthRadius = 6371; // Radio de la Tierra en km
+                    
+                    $lat1 = deg2rad($lat1);
+                    $lon1 = deg2rad($lon1);
+                    $lat2 = deg2rad($lat2);
+                    $lon2 = deg2rad($lon2);
+                    
+                    $dLat = $lat2 - $lat1;
+                    $dLon = $lon2 - $lon1;
+                    
+                    $a = sin($dLat/2) * sin($dLat/2) + 
+                         cos($lat1) * cos($lat2) * 
+                         sin($dLon/2) * sin($dLon/2);
+                    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+                    
+                    return $earthRadius * $c;
+                };
+                
+                // Suma de todas las distancias entre puntos consecutivos
+                $totalDistance = 0;
+                for ($i = 0; $i < count($coordinates) - 1; $i++) {
+                    $totalDistance += $calculateDistance(
+                        $coordinates[$i][0], $coordinates[$i][1], 
+                        $coordinates[$i+1][0], $coordinates[$i+1][1]
+                    );
+                }
+                
+                return round($totalDistance, 2);
+            },
+            'duration' => function (array $attributes) {
+                // Estimamos la duración basada en la distancia (60 km/h de velocidad media)
+                $distance = $attributes['distance'];
+                $hours = $distance / 60;
+                return round($hours * 60); // Convertir a minutos
+            },
             'totalScore' => 0,
             'countScore' => 0,
             'country_id' => Country::inRandomOrder()->first()->id,

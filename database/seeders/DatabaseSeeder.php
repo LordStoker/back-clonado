@@ -30,11 +30,12 @@ class DatabaseSeeder extends Seeder
             LandscapeSeeder::class,
             DifficultySeeder::class,
             TerrainSeeder::class,
+            RouteSeeder::class, // Nuevo seeder para rutas con imágenes de mapas
         ]);
 
         //Factories
         User::factory(50)->create();
-        Route::factory(50)->create();
+        // Route::factory(50)->create(); // Ya no necesitamos esto porque lo hace el RouteSeeder
         Comment::factory(200)->create();
     }
 }

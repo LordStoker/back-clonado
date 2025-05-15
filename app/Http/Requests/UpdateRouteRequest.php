@@ -31,7 +31,7 @@ class UpdateRouteRequest extends FormRequest
             'terrain_id' => 'sometimes|required|exists:terrains,id',
             'country_id' => 'sometimes|required|exists:countries,id',
             'user_id' => 'sometimes|required|exists:users,id',
-            'route_map' => 'sometimes|required|string'
+            'route_map' => 'sometimes|nullable|string'
         ];
     }
 

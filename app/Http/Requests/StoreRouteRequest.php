@@ -32,7 +32,8 @@ class StoreRouteRequest extends FormRequest
             'terrain_id' => 'required|exists:terrains,id',
             'country_id' => 'required|exists:countries,id',
             // Eliminamos el user_id porque se asignará automáticamente
-            'route_map' => 'required|string' // almacenamos las coordenadas como JSON (string)
+            'route_map' => 'nullable|string', // almacenamos las coordenadas como JSON (string), pero es opcional
+            'image' => 'nullable|string' // URL de la imagen o imagen en base64
         ];
     }
 

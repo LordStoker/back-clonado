@@ -33,6 +33,26 @@ class RouteController extends Controller
         // Asignamos el ID del usuario autenticado
         $validated['user_id'] = $request->user()->id;
         
+        // Procesamos la imagen en base64 si existe
+        if (isset($validated['image']) && preg_match('/^data:image\/(\w+);base64,/', $validated['image'], $matches)) {
+            $imageData = substr($validated['image'], strpos($validated['image'], ',') + 1);
+            $imageData = str_replace(' ', '+', $imageData);
+            $imageData = base64_decode($imageData);
+            
+            if ($imageData === false) {
+                unset($validated['image']); // Eliminamos la imagen inválida
+            } else {
+                $imageExtension = $matches[1]; // jpg, png, etc.
+                $imageName = 'route_maps/' . uniqid() . '.' . $imageExtension;
+                
+                // Guardar la imagen en el almacenamiento
+                \Storage::disk('public')->put($imageName, $imageData);
+                
+                // Actualizamos la URL en los datos validados
+                $validated['image'] = \Storage::url($imageName);
+            }
+        }
+        
         // Creamos la ruta con los datos validados y el user_id actual
         $route = Route::create($validated);
         
