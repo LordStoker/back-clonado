@@ -10,18 +10,23 @@ use App\Models\Landscape;
 use App\Models\Difficulty;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class RouteSeeder extends Seeder
-{
-    /**
+{    /**
      * Run the database seeds.
      */
     public function run(): void
     {
+        $this->command->info('Creando rutas de muestra...');
+        
         // Crear rutas de muestra con coordenadas aleatorias válidas
         Route::factory(50)->create()->each(function ($route) {
             // Si la ruta tiene coordenadas válidas, intentar generar una imagen del mapa
             $this->generateMapImage($route);
+            
+            // Mostrar información de la ruta creada
+            $this->updateRouteMetadata($route);
         });
     }
 
@@ -62,17 +67,26 @@ class RouteSeeder extends Seeder
             
             foreach ($coordinates as $coord) {
                 $pathParam .= '|' . $coord[0] . ',' . $coord[1];
+            }            // En lugar de generar una imagen en el servidor,
+            // almacenamos un marcador especial para que el frontend
+            // sepa que debe generar la imagen dinámicamente
+            
+            // Verificamos que las coordenadas estén correctas
+            if (is_array($coordinates) && count($coordinates) >= 2) {
+                // Comprobamos que route_map sea un JSON válido para asegurar que el frontend pueda usarlo
+                if (!is_string($route->route_map) || empty($route->route_map)) {
+                    // Si por alguna razón las coordenadas no se guardaron como JSON, las guardamos nuevamente
+                    $route->route_map = json_encode($coordinates);
+                }
+                
+                // IMPORTANTE: Marcamos la imagen para generación dinámica en el frontend
+                $route->image = 'auto_generated_map';
+                $route->save();
+                
+                $this->command->info("   → Imagen de mapa configurada para generación dinámica");
+            } else {
+                $this->command->warn("   → No se pudo configurar la imagen del mapa: coordenadas insuficientes");
             }
-            
-            // Para este ejemplo, usaremos MapBox Static API (requiere una API key)
-            // Otra opción sería usar OSRM (Open Source Routing Machine)
-            
-            // Esta es una implementación simplificada, en producción se necesitaría una API key válida
-            // Simplemente almacenaremos un indicador para que el frontend sepa que debe generar la imagen
-            
-            // En lugar de una imagen real, almacenamos un marcador
-            $route->image = 'auto_generated_map';
-            $route->save();
             
             // Nota: En un entorno real, se debería implementar la generación de imágenes estáticas
             // usando un servicio como MapBox, Google Maps, o incluso generar las imágenes en el servidor
@@ -99,5 +113,53 @@ class RouteSeeder extends Seeder
         if ($span <= 8) return 6;
         
         return 5; // Para rutas muy largas
+    }
+    
+    /**
+     * Actualiza los metadatos de la ruta (país, distancia, duración)
+     */
+    private function updateRouteMetadata(Route $route): void
+    {
+        try {
+            $coordinates = json_decode($route->route_map);
+            if (!$coordinates || count($coordinates) < 2) {
+                $this->command->error("Ruta {$route->id}: {$route->name} - Coordenadas inválidas");
+                return;
+            }
+            
+            // Verificar que los datos de la ruta son coherentes
+            if ($route->country) {
+                // Obtener la coordenada central para mostrarla
+                $midIndex = floor(count($coordinates) / 2);
+                $lat = $coordinates[$midIndex][0];
+                $lng = $coordinates[$midIndex][1];
+                
+                $this->command->info("✓ Ruta {$route->id}: {$route->name} - País: {$route->country->name} ({$route->country->code}), Coordenadas: {$lat},{$lng}, Distancia: {$route->distance} km, Duración: {$route->duration} min");
+            } else {
+                // Si no hay país asignado, intentamos determinar por qué
+                $midIndex = floor(count($coordinates) / 2);
+                $lat = $coordinates[$midIndex][0];
+                $lng = $coordinates[$midIndex][1];
+                
+                $this->command->warn("⚠ Ruta {$route->id}: {$route->name} - Sin país asignado. Coordenadas: {$lat},{$lng}");
+                
+                // Intentamos determinar visualmente si estas coordenadas corresponden a un país conocido
+                $country = null;
+                if ($lat >= 36 && $lat <= 44 && $lng >= -10 && $lng <= 5) {
+                    $country = "España (probablemente)";
+                } elseif ($lat >= 42 && $lat <= 52 && $lng >= -5 && $lng <= 8) {
+                    $country = "Francia (probablemente)";
+                } elseif ($lat >= 36 && $lat <= 47 && $lng >= 7 && $lng <= 19) {
+                    $country = "Italia (probablemente)";
+                }
+                
+                if ($country) {
+                    $this->command->warn("   → Coordenadas corresponden a {$country}. Verificar tabla de países.");
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error actualizando metadatos de ruta: ' . $e->getMessage());
+            $this->command->error("Error en ruta {$route->id}: " . $e->getMessage());
+        }
     }
 }

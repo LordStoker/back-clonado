@@ -7,6 +7,7 @@ use App\Models\Country;
 use App\Models\Terrain;
 use App\Models\Landscape;
 use App\Models\Difficulty;
+use App\Services\GeocodingService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -50,8 +51,8 @@ class RouteFactory extends Factory
                 $centerLng = $region['lng'];
                 $radius = $region['radius']; // Radio en grados aproximadamente
                 
-                // Generamos entre 4 y 10 puntos para la ruta
-                $numPoints = rand(4, 10);
+                // Generamos entre 5 y 12 puntos para la ruta (asegurando suficientes puntos para visualización)
+                $numPoints = rand(5, 12);
                 $coordinates = [];
                 
                 // Generamos los puntos en un patrón que forme una ruta realista
@@ -60,16 +61,23 @@ class RouteFactory extends Factory
                     $latOffset = (mt_rand(-100, 100) / 100) * $radius;
                     $lngOffset = (mt_rand(-100, 100) / 100) * $radius;
                     
-                    // Ajustamos la dirección para crear un patrón de ruta
+                    // Ajustamos la dirección para crear un patrón de ruta más interesante
+                    // Usamos una función sinusoidal para crear un patrón ondulado más realista
                     $factor = $i / ($numPoints - 1); // 0 a 1
-                    $dirLat = sin($factor * M_PI) * $radius * 0.5;
-                    $dirLng = cos($factor * M_PI) * $radius * 0.5;
+                    $dirLat = sin($factor * M_PI * 1.5) * $radius * 0.6;
+                    $dirLng = cos($factor * M_PI * 1.5) * $radius * 0.6;
                     
                     $lat = $centerLat + $dirLat + ($latOffset * 0.2);
                     $lng = $centerLng + $dirLng + ($lngOffset * 0.2);
                     
                     // Añadimos el punto a las coordenadas
                     $coordinates[] = [$lat, $lng];
+                }
+                
+                // Validamos que las coordenadas sean números válidos
+                foreach ($coordinates as &$coord) {
+                    $coord[0] = round($coord[0], 6); // Limitar a 6 decimales (precisión suficiente)
+                    $coord[1] = round($coord[1], 6);
                 }
                 
                 // JSON encode para almacenar en la BD
@@ -117,12 +125,27 @@ class RouteFactory extends Factory
             'duration' => function (array $attributes) {
                 // Estimamos la duración basada en la distancia (60 km/h de velocidad media)
                 $distance = $attributes['distance'];
-                $hours = $distance / 60;
+                $hours = $distance / 90;
                 return round($hours * 60); // Convertir a minutos
             },
             'totalScore' => 0,
             'countScore' => 0,
-            'country_id' => Country::inRandomOrder()->first()->id,
+            'country_id' => function (array $attributes) {
+                // Determinamos el país basado en las coordenadas de la ruta
+                $coordinates = json_decode($attributes['route_map']);
+                if (!$coordinates || count($coordinates) < 2) {
+                    return Country::inRandomOrder()->first()->id;
+                }
+                
+                // Usamos el punto medio de la ruta para determinar el país
+                $midIndex = floor(count($coordinates) / 2);
+                $lat = $coordinates[$midIndex][0];
+                $lng = $coordinates[$midIndex][1];
+                
+                // Usamos nuestro servicio de geocodificación
+                return GeocodingService::getCountryFromCoordinates($lat, $lng) ?? 
+                       Country::inRandomOrder()->first()->id;
+            },
             'terrain_id' => Terrain::inRandomOrder()->first()->id,
             'difficulty_id' => Difficulty::inRandomOrder()->first()->id,
             'landscape_id' => Landscape::inRandomOrder()->first()->id,            
