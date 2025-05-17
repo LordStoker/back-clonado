@@ -88,9 +88,7 @@ class RouteSeeder extends Seeder
                 $this->command->warn("   → No se pudo configurar la imagen del mapa: coordenadas insuficientes");
             }
             
-            // Nota: En un entorno real, se debería implementar la generación de imágenes estáticas
-            // usando un servicio como MapBox, Google Maps, o incluso generar las imágenes en el servidor
-            // con una biblioteca como GD o Imagick
+           
         } catch (\Exception $e) {
             \Log::error('Error generando imagen del mapa: ' . $e->getMessage());
         }

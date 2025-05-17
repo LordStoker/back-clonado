@@ -21,5 +21,6 @@ class UserSeeder extends Seeder
             'password' => '12345678',
             'role_id' => Role::where('name', 'Admin')->first()->id
         ]);
+        User::factory(50)->create();
     }
 }
