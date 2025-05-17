@@ -21,7 +21,7 @@ class RouteSeeder extends Seeder
         $this->command->info('Creando rutas de muestra...');
         
         // Crear rutas de muestra con coordenadas aleatorias válidas
-        Route::factory(50)->create()->each(function ($route) {
+        Route::factory(200)->create()->each(function ($route) {
             // Si la ruta tiene coordenadas válidas, intentar generar una imagen del mapa
             $this->generateMapImage($route);
             

@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
 
         //Factories
         User::factory(50)->create();
-        // Route::factory(50)->create(); // Ya no necesitamos esto porque lo hace el RouteSeeder
+        // Route::factory(50)->create(); 
         Comment::factory(200)->create();
     }
 }
