@@ -160,4 +160,64 @@ class CommentController extends Controller
             'message' => 'Comment deleted successfully'
         ], 200);
     }
+
+    /**
+     * Get paginated comments for a specific user.
+     */
+    public function getUserComments(Request $request, $userId)
+    {
+        // Validar el ID del usuario y parámetros de paginación
+        $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'perPage' => 'sometimes|integer|min:1|max:50',
+        ]);
+
+        // Verificar que el usuario existe
+        if (!\App\Models\User::find($userId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no encontrado',
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 10,
+                    'total' => 0,
+                ]
+            ], 404);
+        }
+
+        // Configurar la paginación
+        $page = $request->input('page', 1);
+        $perPage = $request->input('perPage', 10);
+
+        // Buscar comentarios del usuario especificado
+        $comments = Comment::with(['route'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // Asegurarse de que los comentarios incluyan la información de la ruta
+        $commentsWithRoutes = $comments->items();
+        
+        // Verificar que cada comentario tenga una ruta válida
+        foreach ($commentsWithRoutes as $comment) {
+            if (!$comment->route) {
+                // Cargar la relación de ruta si no existe
+                $comment->load('route');
+            }
+        }
+        
+        // Devolver los comentarios paginados con estructura consistente
+        return response()->json([
+            'success' => true,
+            'data' => $commentsWithRoutes,
+            'pagination' => [
+                'current_page' => $comments->currentPage(),
+                'last_page' => $comments->lastPage(),
+                'per_page' => $comments->perPage(),
+                'total' => $comments->total(),
+            ]
+        ], 200);
+    }
 }

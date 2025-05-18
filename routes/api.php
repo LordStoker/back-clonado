@@ -44,6 +44,9 @@ Route::apiResource('comment', CommentController::class)->only(['index', 'show'])
 // Ruta pública para obtener comentarios de una ruta específica
 Route::get('/routes/{route}/comments', [CommentController::class, 'getRouteComments']);
 
+// Ruta pública para obtener comentarios de un usuario específico
+Route::get('/users/{user}/comments', [CommentController::class, 'getUserComments']);
+
 // Rutas públicas para las rutas (listar y ver una) //BORRARLAS TRAS TERMINAR LAS PRUEBAS DE BACKEND Y FRONTEND
 Route::apiResource('route', RouteController::class)->only(['index', 'show']);
 
