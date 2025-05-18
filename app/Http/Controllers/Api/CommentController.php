@@ -102,12 +102,10 @@ class CommentController extends Controller
                 // Guardar la imagen en el disco público en la carpeta 'comment_images'
                 $path = $image->store('comment_images', 'public');
                 
-                // Crear URL absoluta para la imagen
-                $imageUrl = url('/storage/' . $path);
-                
-                // Crear el registro en la tabla de imágenes de comentarios
+                // Solo guardar la ruta del archivo, no la URL completa
+                // En el frontend se construirá la URL completa
                 $comment->commentImages()->create([
-                    'url' => $imageUrl,
+                    'url' => $path,
                     'comment_id' => $comment->id
                 ]);
             }
