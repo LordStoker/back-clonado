@@ -47,6 +47,35 @@ class UserController extends Controller
             'data' => $user
         ], 200);
     }
+    
+    /**
+     * Display the public profile of a user.
+     * 
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function publicProfile(User $user)
+    {
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no encontrado'
+            ], 404);
+        }
+        
+        // Solo devolvemos información pública (nombre, apellidos)
+        $publicData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'last_name' => $user->last_name,
+            'created_at' => $user->created_at
+        ];
+        
+        return response()->json([
+            'success' => true,
+            'data' => $publicData
+        ], 200);
+    }
     // {
     //     $user = User::find($id);
     //     if (!$user) {

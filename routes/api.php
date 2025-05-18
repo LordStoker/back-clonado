@@ -53,6 +53,9 @@ Route::apiResource('route', RouteController::class)->only(['index', 'show']);
 // Rutas públicas para usuarios (listar y ver información de usuarios)
 Route::apiResource('user', UserController::class)->only(['index', 'show']);
 
+// Ruta para ver perfil público de usuario
+Route::get('/users/{user}/public-profile', [UserController::class, 'publicProfile']);
+
 // --- RUTAS PROTEGIDAS (requieren login con Sanctum) ---
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
