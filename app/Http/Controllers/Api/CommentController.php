@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 
 class CommentController extends Controller
@@ -53,8 +54,8 @@ class CommentController extends Controller
         $page = $request->input('page', 1);
         $perPage = $request->input('perPage', 10);
 
-        // Buscar comentarios para la ruta especificada
-        $comments = Comment::with(['user'])
+        // Buscar comentarios para la ruta especificada, incluyendo usuario e imágenes
+        $comments = Comment::with(['user', 'commentImages'])
             ->where('route_id', $routeId)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
@@ -83,6 +84,7 @@ class CommentController extends Controller
             'score' => 'required|integer|min:1|max:5',
             // Eliminamos user_id de la validación ya que se asignará automáticamente
             'route_id' => 'required|exists:routes,id',
+            'images.*' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048', // Max 2MB por imagen
         ]);
 
         // Preparar los datos del comentario
@@ -94,8 +96,25 @@ class CommentController extends Controller
         // Crear el comentario con los datos validados y el user_id del usuario autenticado
         $comment = Comment::create($commentData);
 
-        // Cargar la relación del usuario para incluirla en la respuesta
-        $comment->load('user');
+        // Procesar las imágenes si existen
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                // Guardar la imagen en el disco público en la carpeta 'comment_images'
+                $path = $image->store('comment_images', 'public');
+                
+                // Crear URL absoluta para la imagen
+                $imageUrl = url('/storage/' . $path);
+                
+                // Crear el registro en la tabla de imágenes de comentarios
+                $comment->commentImages()->create([
+                    'url' => $imageUrl,
+                    'comment_id' => $comment->id
+                ]);
+            }
+        }
+
+        // Cargar la relación del usuario y las imágenes para incluirlas en la respuesta
+        $comment->load(['user', 'commentImages']);
 
         // Return the created comment as a JSON response
         return response()->json([
@@ -110,7 +129,7 @@ class CommentController extends Controller
     public function show(string $id)
     {
         // Find the comment by ID
-        $comment = Comment::with(['user', 'route'])->find($id);
+        $comment = Comment::with(['user', 'route', 'commentImages'])->find($id);
 
         // If the comment is not found, return a 404 response
         if (!$comment) {
@@ -140,8 +159,8 @@ class CommentController extends Controller
      */
     public function destroy(string $id)
     {
-        // Find the comment by ID
-        $comment = Comment::find($id);
+        // Find the comment by ID with its images
+        $comment = Comment::with('commentImages')->find($id);
 
         // If the comment is not found, return a 404 response
         if (!$comment) {
@@ -151,7 +170,24 @@ class CommentController extends Controller
             ], 404);
         }
 
-        // Delete the comment
+        // Eliminar los archivos físicos de las imágenes si existen
+        foreach ($comment->commentImages as $image) {
+            try {
+                // Convertir la URL absoluta a ruta relativa
+                $urlParts = parse_url($image->url);
+                $pathOnly = isset($urlParts['path']) ? $urlParts['path'] : '';
+                $storagePath = str_replace('/storage/', '', $pathOnly);
+                
+                // Verificar si el archivo existe y eliminarlo
+                if ($storagePath && \Storage::disk('public')->exists($storagePath)) {
+                    \Storage::disk('public')->delete($storagePath);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error al eliminar imagen: ' . $e->getMessage());
+            }
+        }
+
+        // Delete the comment (y sus imágenes gracias a onDelete cascade en la migración)
         $comment->delete();
 
         // Return a success response
@@ -191,8 +227,8 @@ class CommentController extends Controller
         $page = $request->input('page', 1);
         $perPage = $request->input('perPage', 10);
 
-        // Buscar comentarios del usuario especificado
-        $comments = Comment::with(['route'])
+        // Buscar comentarios del usuario especificado, incluyendo ruta e imágenes
+        $comments = Comment::with(['route', 'commentImages'])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
