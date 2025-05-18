@@ -35,7 +35,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user = User::with(['role'])->find($user->id);
+        $user = User::with(['role', 'comments'])->find($user->id);
         if (!$user) {
             return response()->json([
                 'success' => false,

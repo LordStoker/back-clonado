@@ -64,7 +64,7 @@ class RouteController extends Controller
      */
     public function show(Route $route)
     {
-        $route = Route::with(['landscape', 'difficulty', 'user', 'terrain'])->find($route->id);
+        $route = Route::with(['landscape', 'difficulty', 'user', 'terrain', ])->find($route->id);
         if (!$route) {
             return response()->json([
                 'success' => false,
